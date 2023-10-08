@@ -39,6 +39,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.calculator.ui.main.AnimatedCounter
 import com.example.calculator.ui.theme.CalculatorTheme
+import kotlin.math.cos
+import kotlin.math.pow
+import kotlin.math.sin
+import kotlin.math.tan
 
 private var showSmallNum = mutableStateOf(false)
 private var sign = mutableStateOf(0)
@@ -54,7 +58,7 @@ class MainActivity : ComponentActivity() {
                 // A surface container using the 'background' color from the theme
                 MainView(
                     onSignClick = { pressedSign ->
-                        if (pressedSign in 1..4){
+                        if (pressedSign in 1..4 || pressedSign == 7){
                             sign.value = pressedSign
                         } else if (pressedSign == 5){
                             when(sign.value){
@@ -62,6 +66,8 @@ class MainActivity : ComponentActivity() {
                                 2 -> mainNum.value = smallNum.value - mainNum.value
                                 3 -> mainNum.value = smallNum.value * mainNum.value
                                 4 -> if(mainNum.value != 0) mainNum.value = smallNum.value / mainNum.value
+                                7 -> mainNum.value = smallNum.value.toDouble()
+                                    .pow(mainNum.value.toDouble()).toInt()
                                 else -> {}
                             }
                             showSmallNum.value = false
@@ -73,7 +79,7 @@ class MainActivity : ComponentActivity() {
                             mainNum.value = 0
                         }
 
-                        if(pressedSign in 1..4){
+                        if(pressedSign in 1..4 || pressedSign ==7){
                             showSmallNum.value = true
                             smallNum.value = mainNum.value
                             mainNum.value = 0
@@ -81,6 +87,13 @@ class MainActivity : ComponentActivity() {
                     },
                     onNumClick = { pressedNumber ->
                         mainNum.value = mainNum.value * 10 + pressedNumber
+                    },
+                    onSingleSignClick = {pressedSign ->
+                        when(pressedSign){
+                            1 -> mainNum.value = sin(mainNum.value.toDouble()).toInt()
+                            2 -> mainNum.value = cos(mainNum.value.toDouble()).toInt()
+                            3 -> mainNum.value = tan(mainNum.value.toDouble()).toInt()
+                        }
                     }
                 )
             }
@@ -91,7 +104,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainView(
     onNumClick: (num: Int) -> Unit = {},
-    onSignClick: (sign: Int) -> Unit = {}
+    onSignClick: (sign: Int) -> Unit = {},
+    onSingleSignClick: (sign: Int) -> Unit = {}
 ) {
     Surface(
         modifier =
@@ -103,7 +117,7 @@ fun MainView(
             modifier = Modifier.fillMaxSize()
         ) {
             NumDisplayCard(showSmallNum, sign, smallNum, mainNum, false)
-            KeyBoardView(onNumClick, onSignClick)
+            KeyBoardView(onNumClick, onSignClick, onSingleSignClick)
         }
     }
 }
@@ -111,7 +125,7 @@ fun MainView(
 @Composable
 fun NumDisplayCard(
     showSmallNum: MutableState<Boolean> = mutableStateOf(false),
-    sign: MutableState<Int> = mutableStateOf(0), //0:non, 1:+, 2:-, 3:*, 4:/, 5:=, 6:AC
+    sign: MutableState<Int> = mutableStateOf(0), //0:non, 1:+, 2:-, 3:*, 4:/, 5:=, 6:AC, 7:^
     smallNum: MutableState<Int> = mutableStateOf(0),
     mainNum: MutableState<Int> = mutableStateOf(0),
     isPreview: Boolean = false
@@ -175,6 +189,7 @@ fun NumDisplayCard(
                         3 -> "* "
                         4 -> "/ "
                         5 -> "= "
+                        7 -> "^ "
                         else -> ""
                     },
                 style = TextStyle(
@@ -198,7 +213,8 @@ fun NumDisplayCard(
 @Composable
 fun KeyBoardView(
     onNumClick: (num: Int) -> Unit = {},
-    onSignClick: (sign: Int) -> Unit = {}
+    onSignClick: (sign: Int) -> Unit = {},
+    onSingleSignClick: (sign: Int) -> Unit = {}
 ) {
     Column(
         modifier =
@@ -206,6 +222,88 @@ fun KeyBoardView(
             .padding(top = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Surface(
+            modifier =
+            Modifier
+                .padding(top = 10.dp)
+        ) {
+            Row(
+                modifier =
+                Modifier
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Button(
+                    content = {
+                        Text(
+                            text = "sin",
+                            style = TextStyle(
+                                fontSize = LocalDensity.current.run { 22.dp.toSp() }
+                            )
+                        )
+                    },
+                    onClick = {
+                              onSingleSignClick(1)
+                    },
+                    modifier =
+                    Modifier
+                        .height(80.dp)
+                        .width(80.dp)
+                )
+                Button(
+                    content = {
+                        Text(
+                            text = "cos",
+                            style = TextStyle(
+                                fontSize = LocalDensity.current.run { 20.dp.toSp() }
+                            )
+                        )
+                    },
+                    onClick = {
+                        onSingleSignClick(2)
+                    },
+                    modifier =
+                    Modifier
+                        .height(80.dp)
+                        .width(80.dp)
+                )
+                Button(
+                    content = {
+                        Text(
+                            text = "tan",
+                            style = TextStyle(
+                                fontSize = LocalDensity.current.run { 22.dp.toSp() }
+                            )
+                        )
+                    },
+                    onClick = {
+                        onSingleSignClick(3)
+                    },
+                    modifier =
+                    Modifier
+                        .height(80.dp)
+                        .width(80.dp)
+                )
+                Button(
+                    content = {
+                        Text(
+                            text = "^",
+                            style = TextStyle(
+                                fontSize = LocalDensity.current.run { 22.dp.toSp() }
+                            )
+                        )
+                    },
+                    onClick = {
+                        onSignClick(7)
+                    },
+                    modifier =
+                    Modifier
+                        .height(80.dp)
+                        .width(80.dp)
+                )
+            }
+        }
+
         val signArray = arrayOf("+", "-", "*", "/")
         for (i in 0..2) {
             Surface(
@@ -274,7 +372,7 @@ fun KeyBoardView(
                 Button(
                     content = {
                         Text(
-                            text = "CA",
+                            text = "AC",
                             style = TextStyle(
                                 fontSize = LocalDensity.current.run { 22.dp.toSp() }
                             )

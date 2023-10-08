@@ -15,15 +15,14 @@ fun AnimatedCounter(
     modifier: Modifier = Modifier,
     style: TextStyle = MaterialTheme.typography.bodyLarge
 ) {
-    var oldCount by remember {
-        count
-    }
+    var oldCount by remember { count }
+    var flippo by remember { mutableStateOf(false) }
     SideEffect {
         oldCount = count.value
     }
     Row(modifier = modifier) {
-        val countString = count.value.toString()
-        val oldCountString = oldCount.toString()
+        val countString = "${count.value}"
+        val oldCountString = "$oldCount"
         for(i in countString.indices) {
             val oldChar = oldCountString.getOrNull(i) ?: '0'
             val newChar = countString[i]
