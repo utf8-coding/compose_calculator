@@ -4,8 +4,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -40,6 +42,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.calculator.ui.theme.CalculatorTheme
@@ -96,11 +99,19 @@ fun NumDisplayCard(
         shape = RoundedCornerShape(roundCornerSize),
         border = BorderStroke(2.dp, MaterialTheme.colorScheme.outline)
     ) {
-        Column{
+        Column(
+            modifier = Modifier.padding(end = 15.dp)
+        ){
             Spacer(modifier = Modifier.height(80.dp))
             BasicTextField(
-                modifier = Modifier.background(Color.Transparent).fillMaxWidth(),
-                textStyle = MaterialTheme.typography.displayLarge,
+                modifier = Modifier
+                    .background(Color.Transparent)
+                    .fillMaxWidth(),
+                textStyle = TextStyle(
+                    fontSize = MaterialTheme.typography.displayLarge.fontSize,
+                    fontStyle = MaterialTheme.typography.displayLarge.fontStyle,
+                    textAlign = TextAlign.End
+                ),
                 enabled = false,
                 singleLine = true,
                 value = if (isPreview) {"1234, text"
@@ -117,6 +128,7 @@ fun NumDisplayCard(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun KeyBoardView(
     textFieldState: MutableState<String>
@@ -153,6 +165,7 @@ fun KeyBoardView(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceEvenly
     ) {
+        Spacer(modifier = Modifier.height(15.dp))
         Surface (
             modifier =
             Modifier
@@ -163,6 +176,7 @@ fun KeyBoardView(
 
         ) {
             Column(Modifier.fillMaxWidth()){
+                Spacer(modifier = Modifier.height(10.dp))
                 for(i in 0..1){
                     Row(
                         modifier = Modifier
@@ -185,7 +199,7 @@ fun KeyBoardView(
                             ){
                                 Text(
                                     style = TextStyle(
-                                        fontSize = LocalDensity.current.run{20.dp.toSp()},
+                                        fontSize = LocalDensity.current.run{25.dp.toSp()},
                                         color = MaterialTheme.typography.displayMedium.color
                                     ),
                                     text = funcBtnDispContent[j+i*4]
@@ -194,22 +208,23 @@ fun KeyBoardView(
                         }
                     }
                 }
+                Spacer(modifier = Modifier.height(15.dp))
             }
         }
 
         Surface (
             modifier =
             Modifier
-                .fillMaxWidth()
-                .padding(horizontal = surfacePadding, vertical = surfacePadding),
+                .fillMaxWidth(),
             shape = RoundedCornerShape(roundCornerSize)
 
         )  {
             Column(Modifier.fillMaxWidth()){
+                Spacer(modifier = Modifier.height(25.dp))
                 for(i in 0..3){
                     Row(
                         modifier = Modifier
-                            .padding(vertical = surfacePadding *2)
+                            .padding(vertical = surfacePadding * 2)
                             .fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly,
                     ){
@@ -220,30 +235,50 @@ fun KeyBoardView(
                                 Surface(
                                     modifier =
                                     Modifier
-                                        .clickable(
+                                        .combinedClickable(
                                             interactionSource = remember { MutableInteractionSource() },
                                             indication = rememberRipple(bounded = false),
                                             onClick = {
-                                                if(numpadBtnOperationOperation[j+i*5] == "del"){
-                                                    textFieldState.value.removeRange(textFieldState.value.length - 1 until textFieldState.value.length)
-                                                }else if (numpadBtnOperationOperation[j+i*5] == "="){
+                                                if (numpadBtnOperationOperation[j + i * 5] == "del") {
+                                                    if (textFieldState.value.isNotEmpty()){
+                                                        textFieldState.value =
+                                                            textFieldState.value.removeRange(
+                                                                textFieldState.value.length - 1 until textFieldState.value.length
+                                                            )
+                                                    }
+                                                } else if (numpadBtnOperationOperation[j + i * 5] == "=") {
 
-                                                }else {
-                                                    textFieldState.value = textFieldState.value + numpadBtnOperationOperation[j+i*5]
+                                                } else {
+                                                    textFieldState.value =
+                                                        textFieldState.value + numpadBtnOperationOperation[j + i * 5]
+                                                }
+                                            },
+                                            onLongClick = {
+                                                if (numpadBtnOperationOperation[j + i * 5] == "del") {
+                                                    if (textFieldState.value.isNotEmpty()) {
+                                                        textFieldState.value =
+                                                            textFieldState.value.removeRange(0 until textFieldState.value.length)
+                                                    }
                                                 }
                                             }
                                         )
                                         .weight(20f)
                                         .padding(horizontal = 5.dp)
                                 ){
+                                    val text = numpadBtnDispContent[j+i*5]
                                     Text(
                                         modifier = Modifier.background(Color.Transparent),
                                         style = TextStyle(
-                                            fontSize = LocalDensity.current.run{30.dp.toSp()},
+                                            fontSize =
+                                            if(text == "del") {
+                                                LocalDensity.current.run { 25.dp.toSp()}
+                                            } else {
+                                                LocalDensity.current.run { 30.dp.toSp()}
+                                            },
                                             color = MaterialTheme.typography.displayMedium.color,
                                             textAlign = TextAlign.Center
                                             ),
-                                        text = numpadBtnDispContent[j+i*5],
+                                        text = text,
                                         color = MaterialTheme.typography.bodyMedium.color
                                     )
                                 }
@@ -252,6 +287,7 @@ fun KeyBoardView(
                         }
                     }
                 }
+                Spacer(modifier = Modifier.height(25.dp))
             }
 
         }
