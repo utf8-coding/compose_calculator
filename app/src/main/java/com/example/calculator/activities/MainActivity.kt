@@ -69,9 +69,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         viewModel = ViewModelProvider(this)[MainViewModel::class.java]
         viewModel.getCalcHistory {
-            if(it.isEmpty())
-                Toast.makeText(baseContext, "something wrong getting ANS", Toast.LENGTH_SHORT).show()
-            else
                 Toast.makeText(baseContext, "get ANS success", Toast.LENGTH_SHORT).show()
 
             val history = it.getOrNull(it.size-1)?: CalcHistory("0", "0")

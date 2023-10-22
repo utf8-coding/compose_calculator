@@ -41,8 +41,8 @@ class MainViewModel:ViewModel() {
         val service = ServiceCreator.create<AppService>()
         service.getCalcHistory().enqueue(object : Callback<CalcHistoryResponse> {
             override fun onResponse(call: Call<CalcHistoryResponse>, response: Response<CalcHistoryResponse>) {
-                val body = response.body()?:CalcHistoryResponse()
-                onResult(body.data)
+                val data = response.body()?.data ?: arrayListOf()
+                onResult(data)
             }
 
             override fun onFailure(call: Call<CalcHistoryResponse>, t: Throwable) {
