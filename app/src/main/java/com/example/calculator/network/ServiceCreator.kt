@@ -6,10 +6,13 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object ServiceCreator {
-    private const val BASE_URL = "http://192.168.155.88:2333/"
+    private const val BASE_URL = "http://192.168.148.84:2333/"
     private val retrofit = Retrofit.Builder()
         .client(
-            OkHttpClient.Builder().connectTimeout(2, TimeUnit.SECONDS).build()
+            OkHttpClient
+                .Builder()
+                .connectTimeout(2, TimeUnit.SECONDS)
+                .build()
         )
         .baseUrl(BASE_URL)
         .addConverterFactory(GsonConverterFactory.create())
