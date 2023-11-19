@@ -1,55 +1,71 @@
 package com.example.calculator.viewmodel
 
 import android.util.Log
-import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import com.example.calculator.BaseApplication
-import com.example.calculator.dom.CalcHistory
-import com.example.calculator.dom.CalcHistoryResponse
-import com.example.calculator.network.AppService
-import com.example.calculator.network.ServiceCreator
+import com.example.calculator.dao.CalcHistoryDAO
+import com.example.calculator.dao.RateRecordDAO
+import com.example.calculator.dao.UserDAO
+import com.example.calculator.network.RequestFactory
 import io.kaen.dagger.ExpressionParser
-import retrofit2.Callback
-import okhttp3.ResponseBody
-import retrofit2.Call
-import retrofit2.Response
 
 
 class MainViewModel:ViewModel() {
+
+    var rateRecord: RateRecordDAO = RateRecordDAO()
+    fun login(userName: String, pswd: String, onResult: (isSuccess: Boolean, result: UserDAO?) -> Unit) {
+        RequestFactory.login(userName, pswd, onResult)
+    }
+
+    fun register(userName: String, pswd: String, onResult: (isNameOk: Boolean, isInfoLegal: Boolean, result: UserDAO?) -> Unit) {
+        RequestFactory.register(userName, pswd, onResult)
+    }
     fun saveCalcHistory(instruction: String, result: String){
-        netSaveHistory(instruction, result)
+        RequestFactory.addHistory(BaseApplication.appVarHolder.uid, instruction, result)
     }
 
-    fun getCalcHistory(onResult: (result: ArrayList<CalcHistory>) -> Unit){
-        netGetHistory(onResult)
+    fun getCalcHistory(onResult: (result: ArrayList<CalcHistoryDAO>) -> Unit){
+        RequestFactory.getHistories(BaseApplication.appVarHolder.uid, onResult)
     }
-    private fun netSaveHistory(expression: String, result: String){
-        val service = ServiceCreator.create<AppService>()
-        service.addCalcHistory(expression, result).enqueue(object : Callback<ResponseBody> {
-            override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
-                if(response.errorBody() != null)
-                    Toast.makeText(BaseApplication.appContext, "upload failed", Toast.LENGTH_SHORT).show()
-            }
 
-            override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
-                Toast.makeText(BaseApplication.appContext, "history upload failed: ${t.stackTrace}", Toast.LENGTH_LONG).show()
-                Log.e("utf8coding", t.stackTrace.toString())
-            }
-        })
+    fun updateRateRecord(onIllegal: () -> Unit) {
+        RequestFactory.saveRateRecord(rateRecord, onIllegal)
+        Log.e("utf8", "DAO UUID: ${rateRecord.uuid}")
     }
-    private fun netGetHistory(onResult: (result: ArrayList<CalcHistory>) -> Unit){
-        val service = ServiceCreator.create<AppService>()
-        service.getCalcHistory().enqueue(object : Callback<CalcHistoryResponse> {
-            override fun onResponse(call: Call<CalcHistoryResponse>, response: Response<CalcHistoryResponse>) {
-                val data = response.body()?.data ?: arrayListOf()
-                onResult(data)
-            }
 
-            override fun onFailure(call: Call<CalcHistoryResponse>, t: Throwable) {
-                Toast.makeText(BaseApplication.appContext, "history fetch failed: ${t.stackTrace}", Toast.LENGTH_LONG).show()
-                Log.e("utf8coding", t.stackTrace.toString())
+    fun getRateRecord(onResult: (isExist: Boolean, result: RateRecordDAO?) -> Unit) {
+        RequestFactory.getRateRecord(BaseApplication.appVarHolder.uid) { isExist, result ->
+            if (isExist) {
+                rateRecord = result!!
             }
-        })
+            onResult(isExist, result)
+        }
+    }
+
+    fun calcMoney(isLoanMode: Boolean, time: String, money: String): Double{
+        val timeInMonth = (time.toDoubleOrNull()?:0.0) *12
+        val moneyValue = money.toDoubleOrNull()?:0.0
+        val loanTimeList = listOf(0, 6, 12, 36, 60)
+        val loanRateList = listOf(rateRecord.loanRate6, rateRecord.loanRate12, rateRecord.loanRate1236, rateRecord.loanRate3660, rateRecord.loanRate60)
+        val depoTimeList = listOf(0, 3, 6, 12, 24, 36, 60)
+        val depoRateList = listOf(rateRecord.depoRateLive, rateRecord.depoRate3, rateRecord.depoRate6, rateRecord.depoRate12, rateRecord.depoRate24, rateRecord.depoRate36, rateRecord.depoRate60)
+        var result = 0.0
+        if(isLoanMode){
+            for (i in loanTimeList.indices){
+                if (timeInMonth <= loanTimeList[i]){
+                    result = (loanRateList[i-1]*0.01)*moneyValue*time.toDouble()
+                    return result
+                }
+            }
+        } else {
+            for (i in depoTimeList.indices){
+                if (timeInMonth <= depoTimeList[i]){
+                    result = (depoRateList[i-1]*0.01)*moneyValue*time.toDouble()
+                    return result
+                }
+            }
+        }
+        return result
     }
 
     // ---------- 计算器字符串解析 ----------//
